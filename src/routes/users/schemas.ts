@@ -1,8 +1,7 @@
 import { Type } from '@fastify/type-provider-typebox';
-import { GraphQLObjectType, GraphQLString } from 'graphql/index.js';
-import { GraphQLFloat, GraphQLList } from 'graphql';
 import { PrismaClient } from '@prisma/client';
 import { UUIDType } from '../graphql/types/uuid.js';
+import { TUser, TUserList } from '../graphql/schemas.js';
 
 export const userFields = {
   id: Type.String({
@@ -51,24 +50,6 @@ export const changeUserByIdSchema = {
     },
   ),
 };
-
-/* GraphQL schemas */
-export const TUser = new GraphQLObjectType({
-  name: 'User',
-  fields: {
-    id: {
-      type: GraphQLString,
-    },
-    name: {
-      type: GraphQLString,
-    },
-    balance: {
-      type: GraphQLFloat,
-    },
-  },
-});
-
-export const TUserList = new GraphQLList(TUser);
 
 export const getAllUsersGQLSchema = (prisma: PrismaClient) => {
   return {

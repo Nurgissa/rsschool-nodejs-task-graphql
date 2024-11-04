@@ -1,8 +1,8 @@
 import { Type } from '@fastify/type-provider-typebox';
 import { userFields } from '../users/schemas.js';
-import { GraphQLList, GraphQLObjectType, GraphQLString } from 'graphql/index.js';
 import { PrismaClient } from '@prisma/client';
 import { UUIDType } from '../graphql/types/uuid.js';
+import { TPost, TPostList } from '../graphql/schemas.js';
 
 export const postFields = {
   id: Type.String({
@@ -53,27 +53,6 @@ export const changePostByIdSchema = {
     },
   ),
 };
-
-/* GraphQL schemas */
-export const TPost = new GraphQLObjectType({
-  name: 'Post',
-  fields: {
-    id: {
-      type: UUIDType,
-    },
-    title: {
-      type: GraphQLString,
-    },
-    content: {
-      type: GraphQLString,
-    },
-    authorId: {
-      type: UUIDType,
-    },
-  },
-});
-
-export const TPostList = new GraphQLList(TPost);
 
 export const getAllPostsGQLSchema = (prisma: PrismaClient) => {
   return {

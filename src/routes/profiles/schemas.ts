@@ -1,9 +1,9 @@
 import { Type } from '@fastify/type-provider-typebox';
-import { EMemberTypeId, memberTypeFields } from '../member-types/schemas.js';
+import { memberTypeFields } from '../member-types/schemas.js';
 import { userFields } from '../users/schemas.js';
-import { GraphQLBoolean, GraphQLInt, GraphQLList, GraphQLObjectType } from 'graphql';
 import { PrismaClient } from '@prisma/client';
 import { UUIDType } from '../graphql/types/uuid.js';
+import { TProfile, TProfileList } from '../graphql/schemas.js';
 
 export const profileFields = {
   id: Type.String({
@@ -57,30 +57,6 @@ export const changeProfileByIdSchema = {
     },
   ),
 };
-
-/* GraphQL schemas */
-export const TProfile = new GraphQLObjectType({
-  name: 'Profile',
-  fields: {
-    id: {
-      type: UUIDType,
-    },
-    isMale: {
-      type: GraphQLBoolean,
-    },
-    yearOfBirth: {
-      type: GraphQLInt,
-    },
-    userId: {
-      type: UUIDType,
-    },
-    memberTypeId: {
-      type: EMemberTypeId,
-    },
-  },
-});
-
-export const TProfileList = new GraphQLList(TProfile);
 
 export const getAllProfilesGQLSchema = (prisma: PrismaClient) => {
   return {
