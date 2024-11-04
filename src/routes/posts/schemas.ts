@@ -2,6 +2,7 @@ import { Type } from '@fastify/type-provider-typebox';
 import { userFields } from '../users/schemas.js';
 import { GraphQLList, GraphQLObjectType, GraphQLString } from 'graphql/index.js';
 import { PrismaClient } from '@prisma/client';
+import { UUIDType } from '../graphql/types/uuid.js';
 
 export const postFields = {
   id: Type.String({
@@ -58,7 +59,7 @@ export const TPost = new GraphQLObjectType({
   name: 'Post',
   fields: {
     id: {
-      type: GraphQLString,
+      type: UUIDType,
     },
     title: {
       type: GraphQLString,
@@ -67,7 +68,7 @@ export const TPost = new GraphQLObjectType({
       type: GraphQLString,
     },
     authorId: {
-      type: GraphQLString,
+      type: UUIDType,
     },
   },
 });
@@ -86,15 +87,19 @@ export const getPostByIdGQLSchema = (prisma: PrismaClient) => {
     type: TPost,
     args: {
       id: {
-        type: GraphQLString,
+        type: UUIDType,
       },
     },
     resolve: async (_, { id: postId }) => {
-      return prisma.post.findUnique({
-        where: {
-          id: postId as string,
-        },
-      });
+      try {
+        return prisma.post.findUnique({
+          where: {
+            id: postId as string,
+          },
+        });
+      } catch (e) {
+        return Promise.resolve(null);
+      }
     },
   };
 };

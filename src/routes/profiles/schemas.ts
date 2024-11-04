@@ -1,14 +1,9 @@
 import { Type } from '@fastify/type-provider-typebox';
 import { EMemberTypeId, memberTypeFields } from '../member-types/schemas.js';
 import { userFields } from '../users/schemas.js';
-import {
-  GraphQLBoolean,
-  GraphQLInt,
-  GraphQLList,
-  GraphQLObjectType,
-  GraphQLString,
-} from 'graphql';
+import { GraphQLBoolean, GraphQLInt, GraphQLList, GraphQLObjectType } from 'graphql';
 import { PrismaClient } from '@prisma/client';
+import { UUIDType } from '../graphql/types/uuid.js';
 
 export const profileFields = {
   id: Type.String({
@@ -68,13 +63,16 @@ export const TProfile = new GraphQLObjectType({
   name: 'Profile',
   fields: {
     id: {
-      type: GraphQLString,
+      type: UUIDType,
     },
     isMale: {
       type: GraphQLBoolean,
     },
     yearOfBirth: {
       type: GraphQLInt,
+    },
+    userId: {
+      type: UUIDType,
     },
     memberTypeId: {
       type: EMemberTypeId,
@@ -96,15 +94,19 @@ export const getProfileByIdGQLSchema = (prisma: PrismaClient) => {
     type: TProfile,
     args: {
       id: {
-        type: GraphQLString,
+        type: UUIDType,
       },
     },
     resolve: async (_, { id: profileId }) => {
-      return prisma.profile.findUnique({
-        where: {
-          id: profileId as string,
-        },
-      });
+      try {
+        return prisma.profile.findUnique({
+          where: {
+            id: profileId as string,
+          },
+        });
+      } catch {
+        return Promise.resolve(null);
+      }
     },
   };
 };
