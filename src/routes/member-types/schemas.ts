@@ -1,5 +1,11 @@
 import { Type } from '@fastify/type-provider-typebox';
-import { GraphQLEnumType, GraphQLFloat, GraphQLInt, GraphQLList, GraphQLObjectType } from 'graphql';
+import {
+  GraphQLEnumType,
+  GraphQLFloat,
+  GraphQLInt,
+  GraphQLList,
+  GraphQLObjectType,
+} from 'graphql';
 import { PrismaClient } from '@prisma/client';
 
 export enum MemberTypeId {
@@ -30,39 +36,53 @@ export const getMemberTypeByIdSchema = {
   ),
 };
 
-
 /* GraphQL schemas */
-const EMemberTypeId = new GraphQLEnumType({
+export const EMemberTypeId = new GraphQLEnumType({
   name: 'MemberTypeId',
   values: {
-    BASIC: { value: "BASIC" },
-    BUSINESS: { value: "BUSINESS" },
+    BASIC: { value: 'BASIC' },
+    BUSINESS: { value: 'BUSINESS' },
   },
 });
 
-const TMemberType = new GraphQLObjectType({
+export const TMemberType = new GraphQLObjectType({
   name: 'MemberType',
   fields: {
     id: {
-      type: EMemberTypeId
+      type: EMemberTypeId,
     },
     discount: {
-      type: GraphQLFloat
+      type: GraphQLFloat,
     },
     postsLimitPerMonth: {
-      type: GraphQLInt
-    }
-  }
-})
+      type: GraphQLInt,
+    },
+  },
+});
 
-const TMemberTypeList = new GraphQLList(TMemberType);
+export const TMemberTypeList = new GraphQLList(TMemberType);
 
-export const getMemberTypesSchema = (prisma: PrismaClient) => {
+export const getAllMemberTypesGQLSchema = (prisma: PrismaClient) => {
   return {
     type: TMemberTypeList,
-    resolve: async () => prisma.memberType.findMany()
-  }
-}
+    resolve: async () => prisma.memberType.findMany(),
+  };
+};
 
-
-
+export const getMemberTypeByIdGQLSchema = (prisma: PrismaClient) => {
+  return {
+    type: TMemberType,
+    args: {
+      id: {
+        type: EMemberTypeId,
+      },
+    },
+    resolve: async (_, { id: memberTypeId }) => {
+      return prisma.memberType.findUnique({
+        where: {
+          id: memberTypeId as string,
+        },
+      });
+    },
+  };
+};

@@ -50,3 +50,11 @@ export const changePostByIdSchema = {
     },
   ),
 };
+
+// /* GraphQL schemas */
+// const TPost = new GraphQLObjectType({
+//   name: 'Profile',
+//   fields: {
+//
+//   }
+// })

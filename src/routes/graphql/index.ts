@@ -1,7 +1,10 @@
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { createGqlResponseSchema, gqlResponseSchema } from './schemas.js';
 import { graphql, GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
-import { getMemberTypesSchema } from '../member-types/schemas.js';
+import {
+  getAllMemberTypesGQLSchema,
+  getMemberTypeByIdGQLSchema,
+} from '../member-types/schemas.js';
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   const { prisma } = fastify;
@@ -21,7 +24,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           query: new GraphQLObjectType({
             name: 'RootQuery',
             fields: {
-              memberTypes: getMemberTypesSchema(prisma),
+              memberTypes: getAllMemberTypesGQLSchema(prisma),
+              memberType: getMemberTypeByIdGQLSchema(prisma),
               testString: {
                 type: GraphQLString,
                 description: 'TestString',
