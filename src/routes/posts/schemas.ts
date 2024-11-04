@@ -1,5 +1,7 @@
 import { Type } from '@fastify/type-provider-typebox';
 import { userFields } from '../users/schemas.js';
+import { GraphQLList, GraphQLObjectType, GraphQLString } from 'graphql/index.js';
+import { PrismaClient } from '@prisma/client';
 
 export const postFields = {
   id: Type.String({
@@ -51,10 +53,48 @@ export const changePostByIdSchema = {
   ),
 };
 
-// /* GraphQL schemas */
-// const TPost = new GraphQLObjectType({
-//   name: 'Profile',
-//   fields: {
-//
-//   }
-// })
+/* GraphQL schemas */
+export const TPost = new GraphQLObjectType({
+  name: 'Post',
+  fields: {
+    id: {
+      type: GraphQLString,
+    },
+    title: {
+      type: GraphQLString,
+    },
+    content: {
+      type: GraphQLString,
+    },
+    authorId: {
+      type: GraphQLString,
+    },
+  },
+});
+
+export const TPostList = new GraphQLList(TPost);
+
+export const getAllPostsGQLSchema = (prisma: PrismaClient) => {
+  return {
+    type: TPostList,
+    resolve: async () => prisma.post.findMany(),
+  };
+};
+
+export const getPostByIdGQLSchema = (prisma: PrismaClient) => {
+  return {
+    type: TPost,
+    args: {
+      id: {
+        type: GraphQLString,
+      },
+    },
+    resolve: async (_, { id: postId }) => {
+      return prisma.post.findUnique({
+        where: {
+          id: postId as string,
+        },
+      });
+    },
+  };
+};
