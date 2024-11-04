@@ -1,4 +1,6 @@
 import { Type } from '@fastify/type-provider-typebox';
+import { GraphQLEnumType, GraphQLFloat, GraphQLInt, GraphQLList, GraphQLObjectType } from 'graphql';
+import { PrismaClient } from '@prisma/client';
 
 export enum MemberTypeId {
   BASIC = 'BASIC',
@@ -27,3 +29,40 @@ export const getMemberTypeByIdSchema = {
     },
   ),
 };
+
+
+/* GraphQL schemas */
+const EMemberTypeId = new GraphQLEnumType({
+  name: 'MemberTypeId',
+  values: {
+    BASIC: { value: "BASIC" },
+    BUSINESS: { value: "BUSINESS" },
+  },
+});
+
+const TMemberType = new GraphQLObjectType({
+  name: 'MemberType',
+  fields: {
+    id: {
+      type: EMemberTypeId
+    },
+    discount: {
+      type: GraphQLFloat
+    },
+    postsLimitPerMonth: {
+      type: GraphQLInt
+    }
+  }
+})
+
+const TMemberTypeList = new GraphQLList(TMemberType);
+
+export const getMemberTypesSchema = (prisma: PrismaClient) => {
+  return {
+    type: TMemberTypeList,
+    resolve: async () => prisma.memberType.findMany()
+  }
+}
+
+
+
