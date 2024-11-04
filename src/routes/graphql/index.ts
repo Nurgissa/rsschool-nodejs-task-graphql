@@ -6,6 +6,7 @@ import {
   getMemberTypeByIdGQLSchema,
 } from '../member-types/schemas.js';
 import { getAllProfilesGQLSchema, getProfileByIdGQLSchema } from '../profiles/schemas.js';
+import { getAllUsersGQLSchema, getUserByIdGQLSchema } from '../users/schemas.js';
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   const { prisma } = fastify;
@@ -34,6 +35,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
               },
               profiles: getAllProfilesGQLSchema(prisma),
               profile: getProfileByIdGQLSchema(prisma),
+              users: getAllUsersGQLSchema(prisma),
+              user: getUserByIdGQLSchema(prisma),
             },
           }),
         }),

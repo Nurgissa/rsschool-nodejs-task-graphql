@@ -64,7 +64,6 @@ export const changeProfileByIdSchema = {
 };
 
 /* GraphQL schemas */
-
 export const TProfile = new GraphQLObjectType({
   name: 'Profile',
   fields: {
