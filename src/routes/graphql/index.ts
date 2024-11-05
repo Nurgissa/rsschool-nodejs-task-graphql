@@ -90,38 +90,6 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
                   });
                 },
               },
-              createUser: {
-                type: new GraphQLObjectType({
-                  name: 'CreateUser',
-                  fields: {
-                    id: {
-                      type: UUIDType,
-                    },
-                  },
-                }),
-                args: {
-                  dto: {
-                    type: new GraphQLNonNull(
-                      new GraphQLInputObjectType({
-                        name: 'CreateUserInput',
-                        fields: {
-                          name: {
-                            type: GraphQLString,
-                          },
-                          balance: {
-                            type: GraphQLFloat,
-                          },
-                        },
-                      }),
-                    ),
-                  },
-                },
-                resolve: async (_, { dto }) => {
-                  return prisma.user.create({
-                    data: dto as User,
-                  });
-                },
-              },
               createProfile: {
                 type: new GraphQLObjectType({
                   name: 'CreateProfile',
@@ -160,6 +128,161 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
                   });
                 },
               },
+              createUser: {
+                type: new GraphQLObjectType({
+                  name: 'CreateUser',
+                  fields: {
+                    id: {
+                      type: UUIDType,
+                    },
+                  },
+                }),
+                args: {
+                  dto: {
+                    type: new GraphQLNonNull(
+                      new GraphQLInputObjectType({
+                        name: 'CreateUserInput',
+                        fields: {
+                          name: {
+                            type: GraphQLString,
+                          },
+                          balance: {
+                            type: GraphQLFloat,
+                          },
+                        },
+                      }),
+                    ),
+                  },
+                },
+                resolve: async (_, { dto }) => {
+                  return prisma.user.create({
+                    data: dto as User,
+                  });
+                },
+              },
+              changePost: {
+                type: new GraphQLObjectType({
+                  name: 'ChangePost',
+                  fields: {
+                    id: {
+                      type: UUIDType,
+                    },
+                  },
+                }),
+                args: {
+                  id: {
+                    type: UUIDType,
+                  },
+                  dto: {
+                    type: new GraphQLNonNull(
+                      new GraphQLInputObjectType({
+                        name: 'ChangePostInput',
+                        fields: {
+                          title: {
+                            type: GraphQLString,
+                          },
+                          content: {
+                            type: GraphQLString,
+                          },
+                          authorId: {
+                            type: UUIDType,
+                          },
+                        },
+                      }),
+                    ),
+                  },
+                },
+                resolve: async (_, { id: postId, dto }) => {
+                  return prisma.post.update({
+                    data: dto as Post,
+                    where: {
+                      id: postId as string,
+                    },
+                  });
+                },
+              },
+              changeProfile: {
+                type: new GraphQLObjectType({
+                  name: 'ChangeProfile',
+                  fields: {
+                    id: {
+                      type: UUIDType,
+                    },
+                  },
+                }),
+                args: {
+                  id: {
+                    type: UUIDType,
+                  },
+                  dto: {
+                    type: new GraphQLNonNull(
+                      new GraphQLInputObjectType({
+                        name: 'ChangeProfileInput',
+                        fields: {
+                          isMale: {
+                            type: GraphQLBoolean,
+                          },
+                          yearOfBirth: {
+                            type: GraphQLInt,
+                          },
+                          memberTypeId: {
+                            type: EMemberTypeId,
+                          },
+                          userId: {
+                            type: UUIDType,
+                          },
+                        },
+                      }),
+                    ),
+                  },
+                },
+                resolve: async (_, { id: profileId, dto }) => {
+                  return prisma.profile.update({
+                    data: dto as Profile,
+                    where: {
+                      id: profileId as string,
+                    },
+                  });
+                },
+              },
+              changeUser: {
+                type: new GraphQLObjectType({
+                  name: 'ChangeUser',
+                  fields: {
+                    id: {
+                      type: UUIDType,
+                    },
+                  },
+                }),
+                args: {
+                  id: {
+                    type: UUIDType,
+                  },
+                  dto: {
+                    type: new GraphQLNonNull(
+                      new GraphQLInputObjectType({
+                        name: 'ChangeUserInput',
+                        fields: {
+                          name: {
+                            type: GraphQLString,
+                          },
+                          balance: {
+                            type: GraphQLFloat,
+                          },
+                        },
+                      }),
+                    ),
+                  },
+                },
+                resolve: async (_, { id: userId, dto }) => {
+                  return prisma.user.update({
+                    data: dto as User,
+                    where: {
+                      id: userId as string,
+                    },
+                  });
+                },
+              },
               deletePost: {
                 type: GraphQLString,
                 args: {
@@ -171,6 +294,22 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
                   await prisma.post.delete({
                     where: {
                       id: postId as string,
+                    },
+                  });
+                  return '';
+                },
+              },
+              deleteProfile: {
+                type: GraphQLString,
+                args: {
+                  id: {
+                    type: UUIDType,
+                  },
+                },
+                resolve: async (_, { id: profileId }) => {
+                  await prisma.profile.delete({
+                    where: {
+                      id: profileId as string,
                     },
                   });
                   return '';
@@ -192,17 +331,43 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
                   return '';
                 },
               },
-              deleteProfile: {
+              subscribeTo: {
                 type: GraphQLString,
                 args: {
-                  id: {
+                  userId: {
+                    type: UUIDType,
+                  },
+                  authorId: {
                     type: UUIDType,
                   },
                 },
-                resolve: async (_, { id: profileId }) => {
-                  await prisma.profile.delete({
+                resolve: async (_, { userId, authorId }) => {
+                  await prisma.subscribersOnAuthors.create({
+                    data: {
+                      subscriberId: userId as string,
+                      authorId: authorId as string,
+                    },
+                  });
+                  return '';
+                },
+              },
+              unsubscribeFrom: {
+                type: GraphQLString,
+                args: {
+                  userId: {
+                    type: UUIDType,
+                  },
+                  authorId: {
+                    type: UUIDType,
+                  },
+                },
+                resolve: async (_, { userId, authorId }) => {
+                  await prisma.subscribersOnAuthors.delete({
                     where: {
-                      id: profileId as string,
+                      subscriberId_authorId: {
+                        subscriberId: userId as string,
+                        authorId: authorId as string,
+                      },
                     },
                   });
                   return '';
