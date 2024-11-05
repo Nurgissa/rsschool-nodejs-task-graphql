@@ -1,6 +1,13 @@
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import { createGqlResponseSchema, gqlResponseSchema } from './schemas.js';
-import { graphql, GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
+import { createGqlResponseSchema, EMemberTypeId, gqlResponseSchema } from './schemas.js';
+import {
+  graphql,
+  GraphQLInputObjectType,
+  GraphQLNonNull,
+  GraphQLObjectType,
+  GraphQLSchema,
+  GraphQLString,
+} from 'graphql';
 import {
   getAllMemberTypesGQLSchema,
   getMemberTypeByIdGQLSchema,
@@ -8,6 +15,9 @@ import {
 import { getAllProfilesGQLSchema, getProfileByIdGQLSchema } from '../profiles/schemas.js';
 import { getAllUsersGQLSchema, getUserByIdGQLSchema } from '../users/schemas.js';
 import { getAllPostsGQLSchema, getPostByIdGQLSchema } from '../posts/schemas.js';
+import { UUIDType } from './types/uuid.js';
+import { Post, Profile, User } from '@prisma/client';
+import { GraphQLBoolean, GraphQLFloat, GraphQLInt } from 'graphql/index.js';
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   const { prisma } = fastify;
@@ -39,6 +49,164 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
                 type: GraphQLString,
                 description: 'TestString',
                 resolve: () => Math.random().toString(),
+              },
+            },
+          }),
+          mutation: new GraphQLObjectType({
+            name: 'RootMutation',
+            fields: {
+              createPost: {
+                type: new GraphQLObjectType({
+                  name: 'CreatePost',
+                  fields: {
+                    id: {
+                      type: UUIDType,
+                    },
+                  },
+                }),
+                args: {
+                  dto: {
+                    type: new GraphQLNonNull(
+                      new GraphQLInputObjectType({
+                        name: 'CreatePostInput',
+                        fields: {
+                          title: {
+                            type: GraphQLString,
+                          },
+                          content: {
+                            type: GraphQLString,
+                          },
+                          authorId: {
+                            type: UUIDType,
+                          },
+                        },
+                      }),
+                    ),
+                  },
+                },
+                resolve: async (_, { dto }) => {
+                  return prisma.post.create({
+                    data: dto as Post,
+                  });
+                },
+              },
+              createUser: {
+                type: new GraphQLObjectType({
+                  name: 'CreateUser',
+                  fields: {
+                    id: {
+                      type: UUIDType,
+                    },
+                  },
+                }),
+                args: {
+                  dto: {
+                    type: new GraphQLNonNull(
+                      new GraphQLInputObjectType({
+                        name: 'CreateUserInput',
+                        fields: {
+                          name: {
+                            type: GraphQLString,
+                          },
+                          balance: {
+                            type: GraphQLFloat,
+                          },
+                        },
+                      }),
+                    ),
+                  },
+                },
+                resolve: async (_, { dto }) => {
+                  return prisma.user.create({
+                    data: dto as User,
+                  });
+                },
+              },
+              createProfile: {
+                type: new GraphQLObjectType({
+                  name: 'CreateProfile',
+                  fields: {
+                    id: {
+                      type: UUIDType,
+                    },
+                  },
+                }),
+                args: {
+                  dto: {
+                    type: new GraphQLNonNull(
+                      new GraphQLInputObjectType({
+                        name: 'CreateProfileInput',
+                        fields: {
+                          isMale: {
+                            type: GraphQLBoolean,
+                          },
+                          yearOfBirth: {
+                            type: GraphQLInt,
+                          },
+                          memberTypeId: {
+                            type: EMemberTypeId,
+                          },
+                          userId: {
+                            type: UUIDType,
+                          },
+                        },
+                      }),
+                    ),
+                  },
+                },
+                resolve: async (_, { dto }) => {
+                  return prisma.profile.create({
+                    data: dto as Profile,
+                  });
+                },
+              },
+              deletePost: {
+                type: GraphQLString,
+                args: {
+                  id: {
+                    type: UUIDType,
+                  },
+                },
+                resolve: async (_, { id: postId }) => {
+                  await prisma.post.delete({
+                    where: {
+                      id: postId as string,
+                    },
+                  });
+                  return '';
+                },
+              },
+              deleteUser: {
+                type: GraphQLString,
+                args: {
+                  id: {
+                    type: UUIDType,
+                  },
+                },
+                resolve: async (_, { id: userId }) => {
+                  await prisma.user.delete({
+                    where: {
+                      id: userId as string,
+                    },
+                  });
+                  return '';
+                },
+              },
+              deleteProfile: {
+                type: GraphQLString,
+                args: {
+                  id: {
+                    type: UUIDType,
+                  },
+                },
+                resolve: async (_, { id: profileId }) => {
+                  await prisma.profile.delete({
+                    where: {
+                      id: profileId as string,
+                    },
+                  });
+                  return '';
+                },
               },
             },
           }),
