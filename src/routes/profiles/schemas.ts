@@ -58,13 +58,6 @@ export const changeProfileByIdSchema = {
   ),
 };
 
-export const getAllProfilesGQLSchema = (prisma: PrismaClient) => {
-  return {
-    type: TProfileList,
-    resolve: async () => prisma.profile.findMany(),
-  };
-};
-
 export const getProfileByIdGQLSchema = (prisma: PrismaClient) => {
   return {
     type: TProfile,

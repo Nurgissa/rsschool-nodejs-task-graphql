@@ -30,13 +30,6 @@ export const getMemberTypeByIdSchema = {
   ),
 };
 
-export const getAllMemberTypesGQLSchema = (prisma: PrismaClient) => {
-  return {
-    type: TMemberTypeList,
-    resolve: async () => prisma.memberType.findMany(),
-  };
-};
-
 export const getMemberTypeByIdGQLSchema = (prisma: PrismaClient) => {
   return {
     type: TMemberType,

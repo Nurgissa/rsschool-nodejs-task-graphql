@@ -51,13 +51,6 @@ export const changeUserByIdSchema = {
   ),
 };
 
-export const getAllUsersGQLSchema = (prisma: PrismaClient) => {
-  return {
-    type: TUserList,
-    resolve: async () => prisma.user.findMany(),
-  };
-};
-
 export const getUserByIdGQLSchema = (prisma: PrismaClient) => {
   return {
     type: TUser,

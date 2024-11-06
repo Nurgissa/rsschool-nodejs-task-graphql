@@ -54,13 +54,6 @@ export const changePostByIdSchema = {
   ),
 };
 
-export const getAllPostsGQLSchema = (prisma: PrismaClient) => {
-  return {
-    type: TPostList,
-    resolve: async () => prisma.post.findMany(),
-  };
-};
-
 export const getPostByIdGQLSchema = (prisma: PrismaClient) => {
   return {
     type: TPost,

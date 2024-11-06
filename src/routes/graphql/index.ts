@@ -1,5 +1,13 @@
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import { createGqlResponseSchema, EMemberTypeId, gqlResponseSchema } from './schemas.js';
+import {
+  createGqlResponseSchema,
+  EMemberTypeId,
+  gqlResponseSchema,
+  TMemberTypeList,
+  TPostList,
+  TProfileList,
+  TUserList,
+} from './schemas.js';
 import {
   graphql,
   GraphQLInputObjectType,
@@ -8,13 +16,10 @@ import {
   GraphQLSchema,
   GraphQLString,
 } from 'graphql';
-import {
-  getAllMemberTypesGQLSchema,
-  getMemberTypeByIdGQLSchema,
-} from '../member-types/schemas.js';
-import { getAllProfilesGQLSchema, getProfileByIdGQLSchema } from '../profiles/schemas.js';
-import { getAllUsersGQLSchema, getUserByIdGQLSchema } from '../users/schemas.js';
-import { getAllPostsGQLSchema, getPostByIdGQLSchema } from '../posts/schemas.js';
+import { getMemberTypeByIdGQLSchema } from '../member-types/schemas.js';
+import { getProfileByIdGQLSchema } from '../profiles/schemas.js';
+import { getUserByIdGQLSchema } from '../users/schemas.js';
+import { getPostByIdGQLSchema } from '../posts/schemas.js';
 import { UUIDType } from './types/uuid.js';
 import { Post, Profile, User } from '@prisma/client';
 import { GraphQLBoolean, GraphQLFloat, GraphQLInt } from 'graphql/index.js';
@@ -37,13 +42,25 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           query: new GraphQLObjectType({
             name: 'RootQuery',
             fields: {
-              memberTypes: getAllMemberTypesGQLSchema(prisma),
+              memberTypes: {
+                type: TMemberTypeList,
+                resolve: async () => prisma.memberType.findMany(),
+              },
               memberType: getMemberTypeByIdGQLSchema(prisma),
-              profiles: getAllProfilesGQLSchema(prisma),
+              profiles: {
+                type: TProfileList,
+                resolve: async () => prisma.profile.findMany(),
+              },
               profile: getProfileByIdGQLSchema(prisma),
-              users: getAllUsersGQLSchema(prisma),
+              users: {
+                type: TUserList,
+                resolve: async () => prisma.user.findMany(),
+              },
               user: getUserByIdGQLSchema(prisma),
-              posts: getAllPostsGQLSchema(prisma),
+              posts: {
+                type: TPostList,
+                resolve: async () => prisma.post.findMany(),
+              },
               post: getPostByIdGQLSchema(prisma),
               testString: {
                 type: GraphQLString,
