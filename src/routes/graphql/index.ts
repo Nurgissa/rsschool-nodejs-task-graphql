@@ -10,7 +10,7 @@ import {
   parse,
 } from 'graphql';
 import { UUIDType } from './types/uuid.js';
-import { Post, Profile, User } from '@prisma/client';
+import { MemberType, Post, PrismaClient, Profile, User } from '@prisma/client';
 import {
   GraphQLBoolean,
   GraphQLEnumType,
@@ -168,7 +168,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           fields: {
             memberTypes: {
               type: TMemberTypeList,
-              resolve: async () => prisma.memberType.findMany(),
+              resolve: async (_, __, { loaders }: GraphQLContext) =>
+                loaders.fetchAllMemberTypes(),
             },
             memberType: {
               type: TMemberType,
@@ -177,22 +178,12 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
                   type: EMemberTypeId,
                 },
               },
-              resolve: async (_, { id: memberTypeId }) => {
-                return prisma.memberType.findUnique({
-                  where: {
-                    id: memberTypeId as string,
-                  },
-                });
-              },
+              resolve: async (_, { id }, { loaders }: GraphQLContext) =>
+                loaders.fetchMemberTypeById(id),
             },
             profiles: {
               type: TProfileList,
-              resolve: async () =>
-                prisma.profile.findMany({
-                  include: {
-                    memberType: true,
-                  },
-                }),
+              resolve: async (_, __, { loaders }) => loaders.fetchAllProfiles(),
             },
             profile: {
               type: TProfile,
@@ -201,32 +192,12 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
                   type: UUIDType,
                 },
               },
-              resolve: async (_, { id: profileId }) => {
-                try {
-                  return prisma.profile.findUnique({
-                    where: {
-                      id: profileId as string,
-                    },
-                    include: {
-                      memberType: true,
-                    },
-                  });
-                } catch {
-                  return Promise.resolve(null);
-                }
-              },
+              resolve: async (_, { id: profileId }, { loaders }) =>
+                loaders.fetchProfileById(profileId),
             },
             users: {
               type: TUserList,
-              resolve: async () =>
-                prisma.user.findMany({
-                  include: {
-                    posts: true,
-                    profile: true,
-                    subscribedToUser: true,
-                    // userSubscribedToUser: true,
-                  },
-                }),
+              resolve: async (_, __, { loaders }) => loaders.fetchAllUsers(),
             },
             user: {
               type: TUser,
@@ -235,27 +206,11 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
                   type: UUIDType,
                 },
               },
-              resolve: async (_, { id: userId }) => {
-                try {
-                  return prisma.user.findUnique({
-                    where: {
-                      id: userId as string,
-                    },
-                    include: {
-                      posts: true,
-                      profile: true,
-                      subscribedToUser: true,
-                      // userSubscribedToUser: true,
-                    },
-                  });
-                } catch {
-                  return Promise.resolve(null);
-                }
-              },
+              resolve: async (_, { id }, { loaders }) => loaders.fetchUserById(id),
             },
             posts: {
               type: TPostList,
-              resolve: async () => prisma.post.findMany({}),
+              resolve: async (_, __, { loaders }) => loaders.fetchAllPosts(),
             },
             post: {
               type: TPost,
@@ -264,17 +219,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
                   type: UUIDType,
                 },
               },
-              resolve: async (_, { id: postId }) => {
-                try {
-                  return prisma.post.findUnique({
-                    where: {
-                      id: postId as string,
-                    },
-                  });
-                } catch (e) {
-                  return Promise.resolve(null);
-                }
-              },
+              resolve: async (_, { id }, { loaders }) => loaders.fetchPostById(id),
             },
             testString: {
               type: GraphQLString,
@@ -614,14 +559,84 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           errors: [validationError],
         };
       }
+
+      type Loaders = {
+        fetchAllMemberTypes: () => Promise<MemberType[]>;
+        fetchMemberTypeById: (memberTypeId: string) => Promise<MemberType | null>;
+        fetchAllProfiles: () => Promise<Profile[]>;
+        fetchProfileById: (profileId: string) => Promise<Profile | null>;
+        fetchAllUsers: () => Promise<User[]>;
+        fetchUserById: (userId: string) => Promise<User | null>;
+        fetchAllPosts: () => Promise<Post[]>;
+        fetchPostById: (postId: string) => Promise<Post | null>;
+      };
+
+      type GraphQLContext = {
+        prisma: PrismaClient;
+        loaders: Loaders;
+      };
+
+      function getDataLoaders(prisma: PrismaClient): Loaders {
+        return {
+          fetchAllMemberTypes: async () => prisma.memberType.findMany(),
+          fetchMemberTypeById: async (memberTypeId: string) =>
+            prisma.memberType.findUnique({
+              where: {
+                id: memberTypeId,
+              },
+            }),
+          fetchAllProfiles: async () =>
+            prisma.profile.findMany({
+              include: {
+                memberType: true,
+              },
+            }),
+          fetchProfileById: async (profileId: string) =>
+            prisma.profile.findUnique({
+              where: {
+                id: profileId,
+              },
+              include: {
+                memberType: true,
+              },
+            }),
+          fetchAllPosts: async () => prisma.post.findMany({}),
+          fetchPostById: async (postId: string) =>
+            prisma.post.findUnique({
+              where: {
+                id: postId as string,
+              },
+            }),
+          fetchAllUsers: async () =>
+            prisma.user.findMany({
+              include: {
+                posts: true,
+                profile: true,
+                subscribedToUser: true,
+              },
+            }),
+          fetchUserById: async (userId: string) =>
+            prisma.user.findUnique({
+              where: {
+                id: userId as string,
+              },
+              include: {
+                posts: true,
+                profile: true,
+                subscribedToUser: true,
+              },
+            }),
+        };
+      }
+
       return graphql({
         schema,
         source: req.body.query,
         variableValues: req.body.variables,
         contextValue: {
-          z: 1,
-          x: 2,
-        },
+          prisma,
+          loaders: getDataLoaders(prisma),
+        } as GraphQLContext,
       });
     },
   });
