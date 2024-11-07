@@ -1,28 +1,23 @@
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import {
-  createGqlResponseSchema,
-  EMemberTypeId,
-  gqlResponseSchema,
-  TMemberTypeList,
-  TPostList,
-  TProfileList,
-  TUserList,
-} from './schemas.js';
+import { createGqlResponseSchema, gqlResponseSchema } from './schemas.js';
 import {
   graphql,
   GraphQLInputObjectType,
+  GraphQLInterfaceType,
   GraphQLNonNull,
   GraphQLObjectType,
   GraphQLSchema,
   GraphQLString,
 } from 'graphql';
-import { getMemberTypeByIdGQLSchema } from '../member-types/schemas.js';
-import { getProfileByIdGQLSchema } from '../profiles/schemas.js';
-import { getUserByIdGQLSchema } from '../users/schemas.js';
-import { getPostByIdGQLSchema } from '../posts/schemas.js';
 import { UUIDType } from './types/uuid.js';
 import { Post, Profile, User } from '@prisma/client';
-import { GraphQLBoolean, GraphQLFloat, GraphQLInt } from 'graphql/index.js';
+import {
+  GraphQLBoolean,
+  GraphQLEnumType,
+  GraphQLFloat,
+  GraphQLInt,
+  GraphQLList,
+} from 'graphql/index.js';
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   const { prisma } = fastify;
@@ -37,6 +32,125 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     async handler(req) {
+      const EMemberTypeId = new GraphQLEnumType({
+        name: 'MemberTypeId',
+        values: {
+          BASIC: { value: 'BASIC' },
+          BUSINESS: { value: 'BUSINESS' },
+        },
+      });
+
+      const TMemberType = new GraphQLObjectType({
+        name: 'MemberType',
+        fields: {
+          id: {
+            type: EMemberTypeId,
+          },
+          discount: {
+            type: GraphQLFloat,
+          },
+          postsLimitPerMonth: {
+            type: GraphQLInt,
+          },
+        },
+      });
+      const TMemberTypeList = new GraphQLList(TMemberType);
+
+      const TPost = new GraphQLObjectType({
+        name: 'Post',
+        fields: {
+          id: {
+            type: UUIDType,
+          },
+          title: {
+            type: GraphQLString,
+          },
+          content: {
+            type: GraphQLString,
+          },
+          authorId: {
+            type: UUIDType,
+          },
+        },
+      });
+      const TPostList = new GraphQLList(TPost);
+
+      const IUser = new GraphQLInterfaceType({
+        name: 'IUser',
+        fields: {
+          id: {
+            type: GraphQLString,
+          },
+          name: {
+            type: GraphQLString,
+          },
+          balance: {
+            type: GraphQLFloat,
+          },
+        },
+      });
+
+      const TProfile = new GraphQLObjectType({
+        name: 'Profile',
+        fields: {
+          id: {
+            type: UUIDType,
+          },
+          isMale: {
+            type: GraphQLBoolean,
+          },
+          yearOfBirth: {
+            type: GraphQLInt,
+          },
+          userId: {
+            type: UUIDType,
+          },
+          user: {
+            type: IUser,
+          },
+          memberTypeId: {
+            type: EMemberTypeId,
+          },
+          memberType: {
+            type: TMemberType,
+            resolve: async ({ memberTypeId }) => ({
+              id: memberTypeId as string,
+            }),
+          },
+        },
+      });
+      const TProfileList = new GraphQLList(TProfile);
+
+      const TUser = new GraphQLObjectType({
+        name: 'User',
+        fields: {
+          id: {
+            type: GraphQLString,
+          },
+          name: {
+            type: GraphQLString,
+          },
+          balance: {
+            type: GraphQLFloat,
+          },
+          posts: {
+            type: TPostList,
+          },
+          profile: {
+            type: TProfile,
+          },
+          // subscribedToUser: {
+          //   type: new GraphQLNonNull(new GraphQLList(IUser)),
+          // },
+          // userSubscribedTo: {
+          //   type: new GraphQLNonNull(new GraphQLList(IUser)),
+          // },
+        },
+        // interfaces: [IUser],
+      });
+
+      const TUserList = new GraphQLList(TUser);
+
       return graphql({
         schema: new GraphQLSchema({
           query: new GraphQLObjectType({
@@ -46,22 +160,108 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
                 type: TMemberTypeList,
                 resolve: async () => prisma.memberType.findMany(),
               },
-              memberType: getMemberTypeByIdGQLSchema(prisma),
+              memberType: {
+                type: TMemberType,
+                args: {
+                  id: {
+                    type: EMemberTypeId,
+                  },
+                },
+                resolve: async (_, { id: memberTypeId }) => {
+                  return prisma.memberType.findUnique({
+                    where: {
+                      id: memberTypeId as string,
+                    },
+                  });
+                },
+              },
               profiles: {
                 type: TProfileList,
-                resolve: async () => prisma.profile.findMany(),
+                resolve: async () =>
+                  prisma.profile.findMany({
+                    include: {
+                      memberType: true,
+                    },
+                  }),
               },
-              profile: getProfileByIdGQLSchema(prisma),
+              profile: {
+                type: TProfile,
+                args: {
+                  id: {
+                    type: UUIDType,
+                  },
+                },
+                resolve: async (_, { id: profileId }) => {
+                  try {
+                    return prisma.profile.findUnique({
+                      where: {
+                        id: profileId as string,
+                      },
+                      include: {
+                        memberType: true,
+                      },
+                    });
+                  } catch {
+                    return Promise.resolve(null);
+                  }
+                },
+              },
               users: {
                 type: TUserList,
-                resolve: async () => prisma.user.findMany(),
+                resolve: async () =>
+                  prisma.user.findMany({
+                    include: {
+                      posts: true,
+                      profile: true,
+                    },
+                  }),
               },
-              user: getUserByIdGQLSchema(prisma),
+              user: {
+                type: TUser,
+                args: {
+                  id: {
+                    type: UUIDType,
+                  },
+                },
+                resolve: async (_, { id: userId }) => {
+                  try {
+                    return prisma.user.findUnique({
+                      where: {
+                        id: userId as string,
+                      },
+                      include: {
+                        posts: true,
+                        profile: true,
+                      },
+                    });
+                  } catch {
+                    return Promise.resolve(null);
+                  }
+                },
+              },
               posts: {
                 type: TPostList,
-                resolve: async () => prisma.post.findMany(),
+                resolve: async () => prisma.post.findMany({}),
               },
-              post: getPostByIdGQLSchema(prisma),
+              post: {
+                type: TPost,
+                args: {
+                  id: {
+                    type: UUIDType,
+                  },
+                },
+                resolve: async (_, { id: postId }) => {
+                  try {
+                    return prisma.post.findUnique({
+                      where: {
+                        id: postId as string,
+                      },
+                    });
+                  } catch (e) {
+                    return Promise.resolve(null);
+                  }
+                },
+              },
               testString: {
                 type: GraphQLString,
                 description: 'TestString',
@@ -395,6 +595,10 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         }),
         source: req.body.query,
         variableValues: req.body.variables,
+        contextValue: {
+          z: 1,
+          x: 2,
+        },
       });
     },
   });

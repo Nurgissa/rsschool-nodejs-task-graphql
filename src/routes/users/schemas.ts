@@ -1,7 +1,4 @@
 import { Type } from '@fastify/type-provider-typebox';
-import { PrismaClient } from '@prisma/client';
-import { UUIDType } from '../graphql/types/uuid.js';
-import { TUser, TUserList } from '../graphql/schemas.js';
 
 export const userFields = {
   id: Type.String({
@@ -49,26 +46,4 @@ export const changeUserByIdSchema = {
       additionalProperties: false,
     },
   ),
-};
-
-export const getUserByIdGQLSchema = (prisma: PrismaClient) => {
-  return {
-    type: TUser,
-    args: {
-      id: {
-        type: UUIDType,
-      },
-    },
-    resolve: async (_, { id: userId }) => {
-      try {
-        return prisma.user.findUnique({
-          where: {
-            id: userId as string,
-          },
-        });
-      } catch {
-        return Promise.resolve(null);
-      }
-    },
-  };
 };

@@ -1,8 +1,5 @@
 import { Type } from '@fastify/type-provider-typebox';
 import { userFields } from '../users/schemas.js';
-import { PrismaClient } from '@prisma/client';
-import { UUIDType } from '../graphql/types/uuid.js';
-import { TPost, TPostList } from '../graphql/schemas.js';
 
 export const postFields = {
   id: Type.String({
@@ -52,26 +49,4 @@ export const changePostByIdSchema = {
       additionalProperties: false,
     },
   ),
-};
-
-export const getPostByIdGQLSchema = (prisma: PrismaClient) => {
-  return {
-    type: TPost,
-    args: {
-      id: {
-        type: UUIDType,
-      },
-    },
-    resolve: async (_, { id: postId }) => {
-      try {
-        return prisma.post.findUnique({
-          where: {
-            id: postId as string,
-          },
-        });
-      } catch (e) {
-        return Promise.resolve(null);
-      }
-    },
-  };
 };

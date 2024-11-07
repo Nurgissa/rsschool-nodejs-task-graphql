@@ -1,6 +1,4 @@
 import { Type } from '@fastify/type-provider-typebox';
-import { PrismaClient } from '@prisma/client';
-import { EMemberTypeId, TMemberType, TMemberTypeList } from '../graphql/schemas.js';
 
 export enum MemberTypeId {
   BASIC = 'BASIC',
@@ -28,22 +26,4 @@ export const getMemberTypeByIdSchema = {
       additionalProperties: false,
     },
   ),
-};
-
-export const getMemberTypeByIdGQLSchema = (prisma: PrismaClient) => {
-  return {
-    type: TMemberType,
-    args: {
-      id: {
-        type: EMemberTypeId,
-      },
-    },
-    resolve: async (_, { id: memberTypeId }) => {
-      return prisma.memberType.findUnique({
-        where: {
-          id: memberTypeId as string,
-        },
-      });
-    },
-  };
 };
