@@ -24,7 +24,7 @@
 It is forbidden to add new npm dependencies.  
 You should only modify/add the code inside the folder ./src/routes/graphql.  
 You should use [code-first](https://github.dev/graphql/graphql-js/blob/ffa18e9de0ae630d7e5f264f72c94d497c70016b/src/__tests__/starWarsSchema.ts) approach to create a gql server.  
-Do not create files with the name "index.ts". This name is reserved for fastify plugins.  
+Do not create files with the name "loaders.ts". This name is reserved for fastify plugins.  
 You are responsible for using style configs that are in the repository.  
 Make sure the important files have not been changed: npm run test-integrity.  
 If the test was partially completed, then it is considered not completed.  
