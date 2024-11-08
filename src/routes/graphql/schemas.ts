@@ -15,7 +15,6 @@ import { EMemberTypeId, TMemberType, TMemberTypeList } from '../member-types/fie
 import { TProfile, TProfileList } from '../profiles/fields.js';
 import { TUser, TUserList } from '../users/fields.js';
 import { TPost, TPostList } from '../posts/fields.js';
-import { GraphQLContext } from '../../types.js';
 
 export const gqlResponseSchema = Type.Partial(
   Type.Object({
@@ -42,8 +41,7 @@ export const schema = new GraphQLSchema({
     fields: {
       memberTypes: {
         type: TMemberTypeList,
-        resolve: async (_, __, { prisma }: GraphQLContext) =>
-          prisma.memberType.findMany(),
+        resolve: async (_, __, context) => context.prisma.memberType.findMany(),
       },
       memberType: {
         type: TMemberType,
@@ -52,8 +50,8 @@ export const schema = new GraphQLSchema({
             type: EMemberTypeId,
           },
         },
-        resolve: async (_, { id }, { prisma }: GraphQLContext) =>
-          prisma.memberType.findUnique({
+        resolve: async (_, { id }, context) =>
+          context.prisma.memberType.findUnique({
             where: {
               id: id as string,
             },
@@ -61,7 +59,7 @@ export const schema = new GraphQLSchema({
       },
       profiles: {
         type: TProfileList,
-        resolve: async (_, __, { prisma }) => prisma.profile.findMany(),
+        resolve: async (_, __, context) => context.prisma.profile.findMany(),
       },
       profile: {
         type: TProfile,
@@ -70,8 +68,8 @@ export const schema = new GraphQLSchema({
             type: UUIDType,
           },
         },
-        resolve: async (_, { id: profileId, ...r }, { prisma }) =>
-          prisma.profile.findUnique({
+        resolve: async (_, { id: profileId }, context) =>
+          context.prisma.profile.findUnique({
             where: {
               id: profileId as string,
             },
@@ -79,14 +77,7 @@ export const schema = new GraphQLSchema({
       },
       users: {
         type: TUserList,
-        resolve: async (_, __, { prisma }) =>
-          prisma.user.findMany({
-            include: {
-              posts: true,
-              profile: true,
-              subscribedToUser: true,
-            },
-          }),
+        resolve: async (_, __, context) => context.prisma.user.findMany(),
       },
       user: {
         type: TUser,
@@ -95,16 +86,11 @@ export const schema = new GraphQLSchema({
             type: UUIDType,
           },
         },
-        resolve: async (_, { id }, { prisma }) =>
-          prisma.user.findUnique({
-            where: {
-              id: id as string,
-            },
-          }),
+        resolve: async (_, { id }, context) => context.loaders.userByIdLoader.load(id),
       },
       posts: {
         type: TPostList,
-        resolve: async (_, __, { prisma }) => prisma.post.findMany(),
+        resolve: async (_, __, context) => context.prisma.post.findMany(),
       },
       post: {
         type: TPost,
@@ -113,12 +99,7 @@ export const schema = new GraphQLSchema({
             type: UUIDType,
           },
         },
-        resolve: async (_, { id }, { prisma }) =>
-          prisma.post.findUnique({
-            where: {
-              id: id as string,
-            },
-          }),
+        resolve: async (_, { id }, context) => context.loaders.postsByIdLoader.load(id),
       },
       testString: {
         type: GraphQLString,
@@ -159,11 +140,10 @@ export const schema = new GraphQLSchema({
             ),
           },
         },
-        resolve: async (_, { dto }, { prisma }: GraphQLContext) => {
-          return prisma.post.create({
+        resolve: async (_, { dto }, context) =>
+          context.prisma.post.create({
             data: dto as Post,
-          });
-        },
+          }),
       },
       createProfile: {
         type: new GraphQLObjectType({
@@ -197,11 +177,10 @@ export const schema = new GraphQLSchema({
             ),
           },
         },
-        resolve: async (_, { dto }, { prisma }: GraphQLContext) => {
-          return prisma.profile.create({
+        resolve: async (_, { dto }, context) =>
+          context.prisma.profile.create({
             data: dto as Profile,
-          });
-        },
+          }),
       },
       createUser: {
         type: new GraphQLObjectType({
@@ -229,11 +208,10 @@ export const schema = new GraphQLSchema({
             ),
           },
         },
-        resolve: async (_, { dto }, { prisma }: GraphQLContext) => {
-          return prisma.user.create({
+        resolve: async (_, { dto }, context) =>
+          context.prisma.user.create({
             data: dto as User,
-          });
-        },
+          }),
       },
       changePost: {
         type: new GraphQLObjectType({
@@ -267,14 +245,13 @@ export const schema = new GraphQLSchema({
             ),
           },
         },
-        resolve: async (_, { id: postId, dto }, { prisma }: GraphQLContext) => {
-          return prisma.post.update({
+        resolve: async (_, { id: postId, dto }, context) =>
+          context.prisma.post.update({
             data: dto as Post,
             where: {
               id: postId as string,
             },
-          });
-        },
+          }),
       },
       changeProfile: {
         type: new GraphQLObjectType({
@@ -311,14 +288,13 @@ export const schema = new GraphQLSchema({
             ),
           },
         },
-        resolve: async (_, { id: profileId, dto }, { prisma }: GraphQLContext) => {
-          return prisma.profile.update({
+        resolve: async (_, { id: profileId, dto }, context) =>
+          context.prisma.profile.update({
             data: dto as Profile,
             where: {
               id: profileId as string,
             },
-          });
-        },
+          }),
       },
       changeUser: {
         type: new GraphQLObjectType({
@@ -349,14 +325,13 @@ export const schema = new GraphQLSchema({
             ),
           },
         },
-        resolve: async (_, { id: userId, dto }, { prisma }: GraphQLContext) => {
-          return prisma.user.update({
+        resolve: async (_, { id: userId, dto }, context) =>
+          context.prisma.user.update({
             data: dto as User,
             where: {
               id: userId as string,
             },
-          });
-        },
+          }),
       },
       deletePost: {
         type: GraphQLString,
@@ -365,8 +340,8 @@ export const schema = new GraphQLSchema({
             type: UUIDType,
           },
         },
-        resolve: async (_, { id: postId }, { prisma }: GraphQLContext) => {
-          await prisma.post.delete({
+        resolve: async (_, { id: postId }, context) => {
+          await context.prisma.post.delete({
             where: {
               id: postId as string,
             },
@@ -381,8 +356,8 @@ export const schema = new GraphQLSchema({
             type: UUIDType,
           },
         },
-        resolve: async (_, { id: profileId }, { prisma }: GraphQLContext) => {
-          await prisma.profile.delete({
+        resolve: async (_, { id: profileId }, context) => {
+          await context.prisma.profile.delete({
             where: {
               id: profileId as string,
             },
@@ -397,8 +372,8 @@ export const schema = new GraphQLSchema({
             type: UUIDType,
           },
         },
-        resolve: async (_, { id: userId }, { prisma }: GraphQLContext) => {
-          await prisma.user.delete({
+        resolve: async (_, { id: userId }, context) => {
+          await context.prisma.user.delete({
             where: {
               id: userId as string,
             },
@@ -416,8 +391,8 @@ export const schema = new GraphQLSchema({
             type: UUIDType,
           },
         },
-        resolve: async (_, { userId, authorId }, { prisma }: GraphQLContext) => {
-          await prisma.subscribersOnAuthors.create({
+        resolve: async (_, { userId, authorId }, context) => {
+          await context.prisma.subscribersOnAuthors.create({
             data: {
               subscriberId: userId as string,
               authorId: authorId as string,
@@ -436,8 +411,8 @@ export const schema = new GraphQLSchema({
             type: UUIDType,
           },
         },
-        resolve: async (_, { userId, authorId }, { prisma }: GraphQLContext) => {
-          await prisma.subscribersOnAuthors.delete({
+        resolve: async (_, { userId, authorId }, context) => {
+          await context.prisma.subscribersOnAuthors.delete({
             where: {
               subscriberId_authorId: {
                 subscriberId: userId as string,

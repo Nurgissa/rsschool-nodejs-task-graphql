@@ -1,8 +1,8 @@
 import { GraphQLFloat, GraphQLList, GraphQLObjectType, GraphQLString } from 'graphql';
-import { PrismaClient } from '@prisma/client';
+import { Post, PrismaClient, Profile } from '@prisma/client';
 import { TProfile } from '../profiles/fields.js';
 import { TPostList } from '../posts/fields.js';
-import { GraphQLContext } from '../../types.js';
+import DataLoader from 'dataloader';
 
 export const TUser = new GraphQLObjectType({
   name: 'User',
@@ -18,52 +18,23 @@ export const TUser = new GraphQLObjectType({
     },
     profile: {
       type: TProfile,
-      resolve: async ({ id, ...r }, _, { prisma }: { prisma: PrismaClient }) => {
-        return prisma.profile.findUnique({
-          where: {
-            userId: id as string,
-          },
-        });
-      },
+      resolve: async ({ id }, _, context) =>
+        context.loaders.profileByUserIdLoader.load(id as string),
     },
     posts: {
       type: TPostList,
-      resolve: async ({ id }, _, { prisma }: GraphQLContext) =>
-        prisma.post.findMany({
-          where: {
-            authorId: id as string,
-          },
-        }),
+      resolve: async ({ id }, _, context) =>
+        context.loaders.postsByAuthorIdLoader.load(id as string),
     },
     userSubscribedTo: {
       type: new GraphQLList(TUser),
-      resolve: async ({ id }, _, { prisma }) => {
-        const result = await prisma.subscribersOnAuthors.findMany({
-          where: {
-            subscriberId: id as string,
-          },
-          include: {
-            author: true,
-            subscriber: true,
-          },
-        });
-        return result.map(({ author }) => author);
-      },
+      resolve: async ({ id }, _, context) =>
+        context.loaders.userSubscribedToLoader.load(id as string),
     },
     subscribedToUser: {
       type: new GraphQLList(TUser),
-      resolve: async ({ id }, _, { prisma }) => {
-        const result = await prisma.subscribersOnAuthors.findMany({
-          where: {
-            authorId: id as string,
-          },
-          include: {
-            author: true,
-            subscriber: true,
-          },
-        });
-        return result.map(({ subscriber }) => subscriber);
-      },
+      resolve: async ({ id }, _, context) =>
+        context.loaders.subscribedToUserLoader.load(id as string),
     },
   }),
 });
