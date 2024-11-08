@@ -42,8 +42,8 @@ export const schema = new GraphQLSchema({
     fields: {
       memberTypes: {
         type: TMemberTypeList,
-        resolve: async (_, __, { loaders }: GraphQLContext) =>
-          loaders.fetchAllMemberTypes(),
+        resolve: async (_, __, { prisma }: GraphQLContext) =>
+          prisma.memberType.findMany(),
       },
       memberType: {
         type: TMemberType,
@@ -52,12 +52,16 @@ export const schema = new GraphQLSchema({
             type: EMemberTypeId,
           },
         },
-        resolve: async (_, { id }, { loaders }: GraphQLContext) =>
-          loaders.fetchMemberTypeById(id as string),
+        resolve: async (_, { id }, { prisma }: GraphQLContext) =>
+          prisma.memberType.findUnique({
+            where: {
+              id: id as string,
+            },
+          }),
       },
       profiles: {
         type: TProfileList,
-        resolve: async (_, __, { loaders }) => loaders.fetchAllProfiles(),
+        resolve: async (_, __, { prisma }) => prisma.profile.findMany(),
       },
       profile: {
         type: TProfile,
@@ -66,12 +70,23 @@ export const schema = new GraphQLSchema({
             type: UUIDType,
           },
         },
-        resolve: async (_, { id: profileId }, { loaders }) =>
-          loaders.fetchProfileById(profileId as string),
+        resolve: async (_, { id: profileId, ...r }, { prisma }) =>
+          prisma.profile.findUnique({
+            where: {
+              id: profileId as string,
+            },
+          }),
       },
       users: {
         type: TUserList,
-        resolve: async (_, __, { loaders }) => loaders.fetchAllUsers(),
+        resolve: async (_, __, { prisma }) =>
+          prisma.user.findMany({
+            include: {
+              posts: true,
+              profile: true,
+              subscribedToUser: true,
+            },
+          }),
       },
       user: {
         type: TUser,
@@ -80,11 +95,16 @@ export const schema = new GraphQLSchema({
             type: UUIDType,
           },
         },
-        resolve: async (_, { id }, { loaders }) => loaders.fetchUserById(id as string),
+        resolve: async (_, { id }, { prisma }) =>
+          prisma.user.findUnique({
+            where: {
+              id: id as string,
+            },
+          }),
       },
       posts: {
         type: TPostList,
-        resolve: async (_, __, { loaders }) => loaders.fetchAllPosts(),
+        resolve: async (_, __, { prisma }) => prisma.post.findMany(),
       },
       post: {
         type: TPost,
@@ -93,7 +113,12 @@ export const schema = new GraphQLSchema({
             type: UUIDType,
           },
         },
-        resolve: async (_, { id }, { loaders }) => loaders.fetchPostById(id as string),
+        resolve: async (_, { id }, { prisma }) =>
+          prisma.post.findUnique({
+            where: {
+              id: id as string,
+            },
+          }),
       },
       testString: {
         type: GraphQLString,

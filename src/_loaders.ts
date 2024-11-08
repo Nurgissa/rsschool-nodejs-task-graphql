@@ -1,18 +1,7 @@
 import { MemberType, Post, PrismaClient, Profile, User } from '@prisma/client';
 import DataLoader from 'dataloader';
 
-export type Loaders = {
-  fetchAllMemberTypes: () => Promise<MemberType[]>;
-  fetchMemberTypeById: (memberTypeId: string) => Promise<MemberType | null>;
-  fetchAllProfiles: () => Promise<Profile[]>;
-  fetchProfileById: (profileId: string) => Promise<Profile | null>;
-  fetchAllUsers: () => Promise<User[]>;
-  fetchUserById: (userId: string) => Promise<User | null>;
-  fetchAllPosts: () => Promise<Post[]>;
-  fetchPostById: (postId: string) => Promise<Post | null>;
-};
-
-export function getDataLoaders(prisma: PrismaClient): Loaders {
+export function getDataLoaders(prisma: PrismaClient) {
   const userLoader = new DataLoader(async () =>
     prisma.user.findMany({
       include: {
@@ -54,11 +43,23 @@ export function getDataLoaders(prisma: PrismaClient): Loaders {
     });
     return result.map(({ subscriber }) => subscriber);
   });
-  /*
-    resolve: async ({ id }) => {
 
-  },
-     */
+  const postByAuthorIdLoader = new DataLoader(async (authorIds) => {
+    const authors = await prisma.post.findMany({
+      where: {
+        authorId: {
+          in: authorIds.map((userId) => userId as string),
+        },
+      },
+    });
+
+    const userById = authors.reduce<Record<string, Post>>((acc, cur) => {
+      acc[cur.id] = cur;
+      return acc;
+    }, {});
+
+    return authorIds.map((userId) => userById[userId as string] || null);
+  });
 
   const postLoader = new DataLoader(async (ids) => {
     const set = new Set<Post | null>();
@@ -105,7 +106,7 @@ export function getDataLoaders(prisma: PrismaClient): Loaders {
       }),
     fetchProfileById: async (profileId: string) => profileLoader.load(profileId),
     fetchAllPosts: async () => prisma.post.findMany({}),
-    fetchPostById: async (postId: string) => postLoader.load(postId),
+    fetchPostById: async (postId: string) => postByAuthorIdLoader.load(postId),
     fetchAllUsers: async () =>
       prisma.user.findMany({
         include: {

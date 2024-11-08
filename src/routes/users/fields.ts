@@ -2,6 +2,7 @@ import { GraphQLFloat, GraphQLList, GraphQLObjectType, GraphQLString } from 'gra
 import { PrismaClient } from '@prisma/client';
 import { TProfile } from '../profiles/fields.js';
 import { TPostList } from '../posts/fields.js';
+import { GraphQLContext } from '../../types.js';
 
 export const TUser = new GraphQLObjectType({
   name: 'User',
@@ -17,7 +18,7 @@ export const TUser = new GraphQLObjectType({
     },
     profile: {
       type: TProfile,
-      resolve: async ({ id }, _, { prisma }: { prisma: PrismaClient }) => {
+      resolve: async ({ id, ...r }, _, { prisma }: { prisma: PrismaClient }) => {
         return prisma.profile.findUnique({
           where: {
             userId: id as string,
@@ -27,13 +28,12 @@ export const TUser = new GraphQLObjectType({
     },
     posts: {
       type: TPostList,
-      resolve: async ({ id }, _, { prisma }: { prisma: PrismaClient }) => {
-        return prisma.post.findMany({
+      resolve: async ({ id }, _, { prisma }: GraphQLContext) =>
+        prisma.post.findMany({
           where: {
             authorId: id as string,
           },
-        });
-      },
+        }),
     },
     userSubscribedTo: {
       type: new GraphQLList(TUser),

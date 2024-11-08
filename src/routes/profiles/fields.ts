@@ -16,7 +16,7 @@ export const TProfile = new GraphQLObjectType({
     },
     memberType: {
       type: TMemberType,
-      resolve: async ({ memberTypeId }) => ({
+      resolve: ({ memberTypeId }) => ({
         id: memberTypeId as string,
       }),
     },
